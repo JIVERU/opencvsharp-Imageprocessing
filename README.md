@@ -13,8 +13,8 @@ This project is an **image processing activity** built using the [OpenCvSharp](h
   - Greyscale conversion
   - Color inversion
   - Sepia filter
-  - Histogram (placeholder)
-  - RGB Histogram (placeholder)
+  - Histogram
+- **Video dynamic processing using subtraction**
 - **Save Processed Image:** Export the modified image to disk.
 
 ## Technologies
