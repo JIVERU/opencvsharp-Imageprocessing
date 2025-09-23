@@ -42,10 +42,58 @@ namespace RevaldeImageProcessing
             return Image.FromStream(image.ToMemoryStream(".png"));
         }
 
-        private void CalculateHistogram(Mat src)
+        //Histogram functionality reference on opencvsharp wiki https://github.com/shimat/opencvsharp/wiki/Histogram
+        public Mat CalculateHistogram(Mat src)
         {
-            
+            if (src == null || src.Empty())
+            {
+                throw new ArgumentException("Input image cannot be null or empty.");
+            }
+
+
+            using Mat grayImage = src.Channels() == 3 ? src.CvtColor(ColorConversionCodes.BGR2GRAY) : src;
+
+            const int histSize = 256;
+            var hdims = new int[] { histSize };
+            var ranges = new Rangef[] { new Rangef(0, 256) };
+            var channels = new int[] { 0 };
+
+            using Mat hist = new Mat();
+            Cv2.CalcHist(
+                new Mat[] { grayImage },
+                channels,
+                null,
+                hist,
+                1,
+                hdims,
+                ranges
+            );
+
+
+            int histImageWidth = src.Width;
+            int histImageHeight = src.Height;
+            Mat histImage = new Mat(new OpenCvSharp.Size(histImageWidth, histImageHeight), MatType.CV_8UC3, Scalar.All(255));
+
+            Cv2.MinMaxLoc(hist, out _, out double maxVal);
+            Mat scaledHist = hist * (maxVal != 0 ? (double)histImageHeight / maxVal : 0.0);
+            Scalar color = Scalar.All(100);
+            int binWidth = (int)Math.Round((double)histImageWidth / histSize);
+
+            for (int i = 0; i < histSize; ++i)
+            {
+                int binHeight = (int)scaledHist.Get<float>(i);
+                histImage.Rectangle(
+                    new OpenCvSharp.Point(i * binWidth, histImageHeight - binHeight),
+                    new OpenCvSharp.Point((i + 1) * binWidth, histImageHeight),
+                    color,
+                    -1
+                );
+            }
+
+            return histImage;
         }
+
+
 
         private void runToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -83,9 +131,9 @@ namespace RevaldeImageProcessing
                             else Cv2.BitwiseNot(originalImg, finalImg);
                             break;
                         case 4: //Histogram
-                            CalculateHistogram(modifiedImg);
-                            return;
-                        case 6: // To Sepia
+                            finalImg = CalculateHistogram(originalImg);
+                            break;
+                        case 5: // To Sepia
                             if (subtracted) finalImg = calculateSepia(modifiedImg);
                             else finalImg = calculateSepia(originalImg);
                             break;
@@ -155,14 +203,11 @@ namespace RevaldeImageProcessing
                     case "Color Inversion":
                         modification = 3;
                         break;
-                    case "Greyscale Histogram":
+                    case "Histogram":
                         modification = 4;
                         break;
-                    case "RGB Histogram":
-                        modification = 5;
-                        break;
                     case "Sepia":
-                        modification = 6;
+                        modification = 5;
                         break;
                     default:
                         modification = 1;
@@ -357,7 +402,7 @@ namespace RevaldeImageProcessing
             pictureBox2.Image = MatToImage(modifiedImg);
         }
         /*I don't have a webcam so I used an app called DroidCam client to connect my phone camera to my pc 
-         with a CamIndex = 1400. Thus, I don't have the experience using a real webcam on my program. So kindly
+         with a CamIndex = 1400. Thus, I don't have experience using a real webcam on my program. So kindly
          adjust the CamIndex to find the appropriate camera in your system */
         private void StartBtn_Click(object sender, EventArgs e)
         {

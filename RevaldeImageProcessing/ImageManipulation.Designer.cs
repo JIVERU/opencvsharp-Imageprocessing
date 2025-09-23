@@ -199,7 +199,7 @@
             // 
             comboBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             comboBox1.FormattingEnabled = true;
-            comboBox1.Items.AddRange(new object[] { "Copy", "Greyscale", "Color Inversion", "Greyscale Histogram", "RGB Histogram", "Sepia" });
+            comboBox1.Items.AddRange(new object[] { "Copy", "Greyscale", "Color Inversion", "Histogram", "Sepia" });
             comboBox1.Location = new Point(644, 3);
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(201, 23);
