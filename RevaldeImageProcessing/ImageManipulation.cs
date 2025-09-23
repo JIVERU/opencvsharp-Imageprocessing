@@ -57,6 +57,10 @@ namespace RevaldeImageProcessing
                     if (modifiedImg == null) modifiedImg = originalImg.Clone();
                     if (finalImg == null) finalImg = originalImg.Clone();
 
+                    if(modifiedImg.Channels() == 4)
+                    {
+                        Cv2.CvtColor(modifiedImg, modifiedImg, ColorConversionCodes.BGRA2BGR);
+                    }
                     switch (modification)
                     {
                         case 1: // Copy
@@ -75,11 +79,8 @@ namespace RevaldeImageProcessing
                             }
                             break;
                         case 3: // Color Inversion
-                            if (subtracted) Cv2.BitwiseNot(modifiedImg, finalImg);
+                            if (subtracted) finalImg = ~modifiedImg;
                             else Cv2.BitwiseNot(originalImg, finalImg);
-                            Debug.WriteLine("Orig: " + originalImg);
-                            Debug.WriteLine("Mod: " + modifiedImg);
-                            Debug.WriteLine("Last: " + finalImg);
                             break;
                         case 4: //Histogram
                             CalculateHistogram(modifiedImg);
@@ -187,6 +188,9 @@ namespace RevaldeImageProcessing
                         label2.Visible = false;
                         label5.Visible = false;
                         label6.Visible = false;
+                        subtractBtn.Visible = false;
+                        numericUpDown1.Visible = false;
+                        label1.Visible = false;
                         break;
                     case "Photo Mode":
                         mode = 2;
@@ -198,6 +202,9 @@ namespace RevaldeImageProcessing
                         label2.Visible = true;
                         label5.Visible = true;
                         label6.Visible = true;
+                        subtractBtn.Visible = true;
+                        numericUpDown1.Visible = true;
+                        label1.Visible = true;
                         break;
                     default:
                         mode = 1;
@@ -246,7 +253,7 @@ namespace RevaldeImageProcessing
             if (mode == 2)
             {
                 OpenFileDialog ofd = new OpenFileDialog();
-                ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*;*.bmp";
+                ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
                 ofd.Multiselect = false;
                 ofd.Title = "Select an Image File";
 
@@ -269,10 +276,6 @@ namespace RevaldeImageProcessing
                 }
                 subtracted = false;
             }
-            else
-            {
-
-            }
         }
 
         private void uploadBtn_Click(object sender, EventArgs e)
@@ -283,7 +286,7 @@ namespace RevaldeImageProcessing
         private void LoadbackgroundBtn_Click(object sender, EventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*;*.bmp";
+            ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
             ofd.Multiselect = false;
             ofd.Title = "Select an Image File";
 
@@ -351,7 +354,7 @@ namespace RevaldeImageProcessing
                 modifiedImg = tempMat;
             }
             subtracted = true;
-            pictureBox2.Image = resultImage;
+            pictureBox2.Image = MatToImage(modifiedImg);
         }
         /*I don't have a webcam so I used an app called DroidCam client to connect my phone camera to my pc 
          with a CamIndex = 1400. Thus, I don't have the experience using a real webcam on my program. So kindly
