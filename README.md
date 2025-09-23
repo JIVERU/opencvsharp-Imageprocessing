@@ -1,5 +1,5 @@
 # RevaldeImageProcessing
-
+![Screenshot](Assets/Screenshot%202025-09-24%20030734.png)
 ## Overview
 
 This project is an **image processing activity** built using the [OpenCvSharp](https://github.com/shimat/opencvsharp) wrapper for the OpenCV library. It provides a simple Windows Forms interface for performing basic image manipulations. The application is a required deliverable for the **Intelligent Systems 1 (CS345)** course.
