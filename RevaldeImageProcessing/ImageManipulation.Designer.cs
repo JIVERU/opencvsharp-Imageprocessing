@@ -34,13 +34,6 @@
             fileToolStripMenuItem = new ToolStripMenuItem();
             uploadImageToolStripMenuItem = new ToolStripMenuItem();
             saveImageToolStripMenuItem = new ToolStripMenuItem();
-            imageToolStripMenuItem = new ToolStripMenuItem();
-            copyImageToolStripMenuItem = new ToolStripMenuItem();
-            greyScaleToolStripMenuItem = new ToolStripMenuItem();
-            colorInversionToolStripMenuItem = new ToolStripMenuItem();
-            histogramToolStripMenuItem = new ToolStripMenuItem();
-            rGBHistogramToolStripMenuItem = new ToolStripMenuItem();
-            sepiaToolStripMenuItem = new ToolStripMenuItem();
             runToolStripMenuItem = new ToolStripMenuItem();
             UploadBtn = new Button();
             ApplyBtn = new Button();
@@ -59,6 +52,7 @@
             subtractBtn = new Button();
             loadbackgroundBtn = new Button();
             label2 = new Label();
+            warningLabel = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             menuStrip1.SuspendLayout();
@@ -89,7 +83,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, imageToolStripMenuItem, runToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, runToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(1134, 24);
@@ -116,55 +110,6 @@
             saveImageToolStripMenuItem.Size = new Size(164, 22);
             saveImageToolStripMenuItem.Text = "Download Image";
             saveImageToolStripMenuItem.Click += SaveImageToolStripMenuItem_Click;
-            // 
-            // imageToolStripMenuItem
-            // 
-            imageToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { copyImageToolStripMenuItem, greyScaleToolStripMenuItem, colorInversionToolStripMenuItem, histogramToolStripMenuItem, rGBHistogramToolStripMenuItem, sepiaToolStripMenuItem });
-            imageToolStripMenuItem.Name = "imageToolStripMenuItem";
-            imageToolStripMenuItem.Size = new Size(52, 20);
-            imageToolStripMenuItem.Text = "Image";
-            // 
-            // copyImageToolStripMenuItem
-            // 
-            copyImageToolStripMenuItem.Name = "copyImageToolStripMenuItem";
-            copyImageToolStripMenuItem.Size = new Size(183, 22);
-            copyImageToolStripMenuItem.Text = "Copy Image";
-            copyImageToolStripMenuItem.Click += copyImageToolStripMenuItem_Click;
-            // 
-            // greyScaleToolStripMenuItem
-            // 
-            greyScaleToolStripMenuItem.Name = "greyScaleToolStripMenuItem";
-            greyScaleToolStripMenuItem.Size = new Size(183, 22);
-            greyScaleToolStripMenuItem.Text = "Greyscale";
-            greyScaleToolStripMenuItem.Click += greyScaleToolStripMenuItem_Click;
-            // 
-            // colorInversionToolStripMenuItem
-            // 
-            colorInversionToolStripMenuItem.Name = "colorInversionToolStripMenuItem";
-            colorInversionToolStripMenuItem.Size = new Size(183, 22);
-            colorInversionToolStripMenuItem.Text = "Color Inversion";
-            colorInversionToolStripMenuItem.Click += colorInversionToolStripMenuItem_Click;
-            // 
-            // histogramToolStripMenuItem
-            // 
-            histogramToolStripMenuItem.Name = "histogramToolStripMenuItem";
-            histogramToolStripMenuItem.Size = new Size(183, 22);
-            histogramToolStripMenuItem.Text = "Greyscale Histogram";
-            histogramToolStripMenuItem.Click += histogramToolStripMenuItem_Click;
-            // 
-            // rGBHistogramToolStripMenuItem
-            // 
-            rGBHistogramToolStripMenuItem.Name = "rGBHistogramToolStripMenuItem";
-            rGBHistogramToolStripMenuItem.Size = new Size(183, 22);
-            rGBHistogramToolStripMenuItem.Text = "RGB Histogram";
-            rGBHistogramToolStripMenuItem.Click += rGBHistogramToolStripMenuItem_Click;
-            // 
-            // sepiaToolStripMenuItem
-            // 
-            sepiaToolStripMenuItem.Name = "sepiaToolStripMenuItem";
-            sepiaToolStripMenuItem.Size = new Size(183, 22);
-            sepiaToolStripMenuItem.Text = "Sepia";
-            sepiaToolStripMenuItem.Click += sepiaToolStripMenuItem_Click;
             // 
             // runToolStripMenuItem
             // 
@@ -392,11 +337,26 @@
             label2.TextAlign = ContentAlignment.MiddleCenter;
             label2.UseCompatibleTextRendering = true;
             // 
+            // warningLabel
+            // 
+            warningLabel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            warningLabel.AutoSize = true;
+            warningLabel.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            warningLabel.ForeColor = Color.Brown;
+            warningLabel.Location = new Point(365, 518);
+            warningLabel.Name = "warningLabel";
+            warningLabel.Size = new Size(53, 27);
+            warningLabel.TabIndex = 10;
+            warningLabel.Text = "label7";
+            warningLabel.TextAlign = ContentAlignment.MiddleCenter;
+            warningLabel.UseCompatibleTextRendering = true;
+            // 
             // ImageManipulation
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1134, 661);
+            Controls.Add(warningLabel);
             Controls.Add(menuStrip1);
             Controls.Add(tableLayoutPanel1);
             Controls.Add(tableLayoutPanel2);
@@ -426,18 +386,11 @@
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem uploadImageToolStripMenuItem;
         private ToolStripMenuItem saveImageToolStripMenuItem;
-        private ToolStripMenuItem imageToolStripMenuItem;
-        private ToolStripMenuItem copyImageToolStripMenuItem;
-        private ToolStripMenuItem greyScaleToolStripMenuItem;
-        private ToolStripMenuItem colorInversionToolStripMenuItem;
-        private ToolStripMenuItem histogramToolStripMenuItem;
-        private ToolStripMenuItem sepiaToolStripMenuItem;
         private ToolStripMenuItem runToolStripMenuItem;
         private Button UploadBtn;
         private Button ApplyBtn;
         private ComboBox comboBox1;
         private Button downloadBtn;
-        private ToolStripMenuItem rGBHistogramToolStripMenuItem;
         private TableLayoutPanel tableLayoutPanel1;
         private TableLayoutPanel tableLayoutPanel2;
         private Button subtractBtn;
@@ -451,5 +404,6 @@
         private Label label2;
         private Label label5;
         private Label label6;
+        private Label warningLabel;
     }
 }

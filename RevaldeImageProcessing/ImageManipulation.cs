@@ -1,27 +1,40 @@
 using OpenCvSharp;
+using OpenCvSharp.Extensions;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Windows.Forms;
 
 
 namespace RevaldeImageProcessing
 {
     public partial class ImageManipulation : Form
     {
-        String imagePath;
-        Mat originalImg;
-        Mat? modifiedImg;
-        Mat finalImg;
-        Mat frame;
-        Bitmap imageA;
-        Bitmap imageB;
-        bool subtracted = false;
-        decimal threshold = 10;
-        int modification = 1;
-        int mode = 1;
-        VideoCapture cap;
-        System.Windows.Forms.Timer webcamTimer;
-        bool videoFeed = false;
-        
+        private String imagePath;
+        private Mat originalImg;
+        private Mat? modifiedImg;
+        private Mat finalImg;
+        private Mat frame = new Mat();
+        private Bitmap imageA;
+        private Bitmap imageB;
+        private bool subtracted = false;
+        private decimal threshold = 10;
+        private int modification = 1;
+        private int mode = 1;
+        private VideoCapture cap;
+        private System.Windows.Forms.Timer webcamTimer;
+        private bool videoFeed = false;
+
+        private Scalar lowerBound = new Scalar(45, 100, 100);
+        private Scalar upperBound = new Scalar(70, 255, 255);
+        private Mat hsv = new Mat();
+        private Mat mask = new Mat();
+        private Mat inv = new Mat();
+        private Mat subject = new Mat();
+        private Mat bgPart = new Mat();
+        private Mat final = new Mat();
+        private Mat bg;
+
+
 
         public ImageManipulation()
         {
@@ -34,7 +47,9 @@ namespace RevaldeImageProcessing
             pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
             comboBox1.SelectedIndex = 0;
             numericUpDown1.Value = 10;
-            comboBox3.SelectedIndex = 0;
+            comboBox3.SelectedIndex = 1;
+            warningLabel.Visible = false;
+            warningLabel.Text = "";
         }
 
         private Image MatToImage(Mat image)
@@ -105,7 +120,7 @@ namespace RevaldeImageProcessing
                     if (modifiedImg == null) modifiedImg = originalImg.Clone();
                     if (finalImg == null) finalImg = originalImg.Clone();
 
-                    if(modifiedImg.Channels() == 4)
+                    if (modifiedImg.Channels() == 4)
                     {
                         Cv2.CvtColor(modifiedImg, modifiedImg, ColorConversionCodes.BGRA2BGR);
                     }
@@ -131,8 +146,9 @@ namespace RevaldeImageProcessing
                             else Cv2.BitwiseNot(originalImg, finalImg);
                             break;
                         case 4: //Histogram
-                            finalImg = CalculateHistogram(originalImg);
-                            break;
+                            if (subtracted) finalImg = CalculateHistogram(modifiedImg);
+                            else finalImg = CalculateHistogram(originalImg);
+                                break;
                         case 5: // To Sepia
                             if (subtracted) finalImg = calculateSepia(modifiedImg);
                             else finalImg = calculateSepia(originalImg);
@@ -295,7 +311,7 @@ namespace RevaldeImageProcessing
 
         private void LoadImageToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (mode == 2)
+            if (mode == 2 && !videoFeed)
             {
                 OpenFileDialog ofd = new OpenFileDialog();
                 ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
@@ -351,11 +367,13 @@ namespace RevaldeImageProcessing
             modifiedImg = originalImg;
             pictureBox2.Image = imageA;
             subtracted = false;
+            LoadBg();
+            closeError();
         }
 
         private void SubtractBtn_Click(object sender, EventArgs e)
         {
-            if(imageB != null && imageA != null)
+            if (imageB != null && imageA != null)
             {
                 PhotoSubtraction();
             }
@@ -367,12 +385,28 @@ namespace RevaldeImageProcessing
             threshold = numericUpDown1.Value;
         }
 
+        private void ShowError(String message)
+        {
+            warningLabel.Text = message;
+            warningLabel.Visible = true;
+        }
+
+        private void closeError()
+        {
+            warningLabel.Text = "";
+            warningLabel.Visible = false;
+        }
         private void PhotoSubtraction()
         {
             Bitmap resultImage = new Bitmap(imageB.Width, imageB.Height);
             Color myGreen = Color.FromArgb(0, 255, 0);
             int greygreen = (myGreen.R + myGreen.G + myGreen.B) / 3;
 
+            if (imageA.Height < imageB.Height || imageA.Height < imageB.Height)
+            {
+                ShowError("Background image size is smaller than foreground Image");
+                return;
+            }
             for (int x = 0; x < imageB.Width; x++)
             {
                 for (int y = 0; y < imageB.Height; y++)
@@ -387,7 +421,7 @@ namespace RevaldeImageProcessing
                         resultImage.SetPixel(x, y, backpixel);
                 }
             }
-            Mat tempMat = OpenCvSharp.Extensions.BitmapConverter.ToMat(resultImage);
+            Mat tempMat = BitmapConverter.ToMat(resultImage);
             if (tempMat.Channels() == 1)
             {
                 Mat colorMat = new Mat();
@@ -400,6 +434,7 @@ namespace RevaldeImageProcessing
             }
             subtracted = true;
             pictureBox2.Image = MatToImage(modifiedImg);
+            closeError();
         }
         /*I don't have a webcam so I used an app called DroidCam client to connect my phone camera to my pc 
          with a CamIndex = 1400. Thus, I don't have experience using a real webcam on my program. So kindly
@@ -416,120 +451,78 @@ namespace RevaldeImageProcessing
                 return;
             }
 
-            int CamIndex = 0; 
+            int CamIndex = 0;
             cap = new VideoCapture(CamIndex, VideoCaptureAPIs.ANY);
-            
+
             if (!cap.IsOpened())
             {
+                ShowError("Error opening camera");
                 Debug.WriteLine("Error opening webcam");
                 return;
             }
 
+            pictureBox2.Image = null;
+            videoFeed = true;
+
             if (webcamTimer == null)
             {
                 webcamTimer = new System.Windows.Forms.Timer();
-                webcamTimer.Interval = (int) Math.Round(1000.0 / cap.Fps);
+                webcamTimer.Interval = (int)Math.Round(1000.0 / cap.Fps);
                 webcamTimer.Tick += WebcamTimer_Tick;
             }
             webcamTimer.Start();
             StartBtn.Text = "Stop";
-            videoFeed = true;
+        }
+
+        private void LoadBg()
+        {
+            if (!videoFeed) return;
+            if (imageA != null && frame != null)
+            {
+                bg = BitmapConverter.ToMat(imageA);
+                Cv2.Resize(bg, bg, new OpenCvSharp.Size(frame.Width, frame.Height));
+            }
         }
 
         private void WebcamTimer_Tick(object sender, EventArgs e)
         {
             if (cap != null && cap.IsOpened())
             {
-                frame ??= new Mat();
                 cap.Read(frame);
                 if (!frame.Empty())
                 {
                     pictureBox1.Image = MatToImage(frame);
 
-                    //Video Subtraction
-                    if (videoFeed && imageA != null)
-                    {
-                        Mat bg = OpenCvSharp.Extensions.BitmapConverter.ToMat(imageA).Clone();
-                        Cv2.Resize(bg, bg, new OpenCvSharp.Size(frame.Width, frame.Height));
-
-                        Mat hsv = new Mat();
-                        Cv2.CvtColor(frame, hsv, ColorConversionCodes.BGR2HSV);
-
-                        Scalar lowerBound = new Scalar(40, 50, 50);
-                        Scalar upperBound = new Scalar(85, 255, 255);
-                        
-                        Mat mask = new Mat();
-                        Cv2.InRange(hsv,lowerBound,upperBound, mask);
-                        Mat inv = new Mat();
-                        Cv2.BitwiseNot(mask, inv);
-
-                        Mat subject = new Mat();
-                        Cv2.BitwiseAnd(frame, frame, subject, inv);
-
-                        Mat bgPart = new Mat();
-                        Cv2.BitwiseAnd(bg, bg, bgPart, mask);
-
-                        Mat final = new Mat();
-                        Cv2.Add(subject, bgPart, final);
-                        pictureBox2.Image = MatToImage(final);
-                    }
+                    VideoSubtraction();
                 }
             }
         }
 
-        private void greyScaleToolStripMenuItem_Click(object sender, EventArgs e)
+        private void VideoSubtraction()
         {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-            if (item != null)
+            if (videoFeed && bg != null)
             {
-                modification = 2;
-            }
-        }
-
-        private void copyImageToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-            if (item != null)
-            {
-                modification = 1;
-            }
-        }
-
-        private void colorInversionToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-            if (item != null)
-            {
-                modification = 3;
-            }
-        }
-
-        private void histogramToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-            if (item != null)
-            {
-                modification = 4;
-            }
-        }
-
-        private void sepiaToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-            if (item != null)
-            {
-                modification = 6;
-            }
-        }
-
-        private void rGBHistogramToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem item = (ToolStripMenuItem)sender;
-            if (item != null)
-            {
-                modification = 5;
+                LoadBg();
+                Cv2.CvtColor(frame, hsv, ColorConversionCodes.BGR2HSV);
+                mask.SetTo(0);
+                Cv2.InRange(hsv, lowerBound, upperBound, mask);
+                inv.SetTo(0);
+                Cv2.BitwiseNot(mask, inv);
+                subject.SetTo(0);
+                Cv2.BitwiseAnd(frame, frame, subject, inv);
+                bgPart.SetTo(0);
+                Cv2.BitwiseAnd(bg, bg, bgPart, mask);
+                if (subject.Size() != bgPart.Size() || subject.Type() != bgPart.Type())
+                {
+                    Cv2.Resize(bgPart, bgPart, subject.Size());
+                    if (bgPart.Type() != subject.Type())
+                    {
+                        bgPart = bgPart.CvtColor(ColorConversionCodes.BGRA2BGR);
+                    }
+                }
+                Cv2.Add(subject, bgPart, final);
+                pictureBox2.Image = BitmapConverter.ToBitmap(final);
             }
         }
     }
-
 }
