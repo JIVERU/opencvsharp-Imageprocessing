@@ -14,6 +14,18 @@ This project is an **image processing activity** built using the [OpenCvSharp](h
   - Color inversion
   - Sepia filter
   - Histogram
+- **Convolution filters**
+  - Sobel
+  - emboss
+  - Sharpen
+  - Horizontal Sobel
+  - Vertical Sobel
+  - Scharr
+  - Blur
+  - Gaussian Blur
+  - Median Blur
+  - Bilateral Filter
+  - Outline
 - **Video dynamic processing using subtraction**
 - **Save Processed Image:** Export the modified image to disk.
 
