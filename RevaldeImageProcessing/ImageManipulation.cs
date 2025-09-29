@@ -2,6 +2,8 @@ using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection.Emit;
+using System.Security.Cryptography;
 using System.Windows.Forms;
 
 
@@ -23,6 +25,7 @@ namespace RevaldeImageProcessing
         private VideoCapture cap;
         private System.Windows.Forms.Timer webcamTimer;
         private bool videoFeed = false;
+        private String window_name = "Output Image";
 
         private Scalar lowerBound = new Scalar(45, 100, 100);
         private Scalar upperBound = new Scalar(70, 255, 255);
@@ -145,13 +148,46 @@ namespace RevaldeImageProcessing
                             if (subtracted) finalImg = ~modifiedImg;
                             else Cv2.BitwiseNot(originalImg, finalImg);
                             break;
-                        case 4: //Histogram
+                        case 4: // Histogram
                             if (subtracted) finalImg = CalculateHistogram(modifiedImg);
                             else finalImg = CalculateHistogram(originalImg);
-                                break;
+                            break;
                         case 5: // To Sepia
-                            if (subtracted) finalImg = calculateSepia(modifiedImg);
-                            else finalImg = calculateSepia(originalImg);
+                            if (subtracted) finalImg = CalculateSepia(modifiedImg);
+                            else finalImg = CalculateSepia(originalImg);
+                            break;
+                        case 6: // Sobel
+                            finalImg = EdgeDetection(modifiedImg, 'd');
+                            break;
+                        case 7: // Emboss
+                            finalImg = ConvolutionFilter(modifiedImg, 'e');
+                            break;
+                        case 8: // Sharpen
+                            finalImg = ConvolutionFilter(modifiedImg, 's');
+                            break;
+                        case 9: // Horizontal Sobel
+                            finalImg = EdgeDetection(modifiedImg, 'x');
+                            break;
+                        case 10:// Vertical Sobel
+                            finalImg = EdgeDetection(modifiedImg, 'y');
+                            break;
+                        case 11:// Scharr
+                            finalImg = EdgeDetection(modifiedImg, 's');
+                            break;
+                        case 12:// Blur
+                            finalImg = Blur(modifiedImg, 'b');
+                            break;
+                        case 13:// Gaussian Blur
+                            finalImg = Blur(modifiedImg, 'g');
+                            break;
+                        case 14:// Median Blur
+                            finalImg = Blur(modifiedImg, 'm');
+                            break;
+                        case 15:// Bilateral Filter
+                            finalImg = Blur(modifiedImg, 'f');
+                            break;
+                        case 16:// Outline
+                            finalImg = ConvolutionFilter(modifiedImg, 'o');
                             break;
                         default:
                             break;
@@ -169,9 +205,121 @@ namespace RevaldeImageProcessing
             }
         }
 
-        private Mat calculateSepia(Mat src)
+        //Convolution blur functionality reference: https://docs.opencv.org/4.x/dc/dd3/tutorial_gausian_median_blur_bilateral_filter.html
+        //The image is masked with an 11x11 convolution matrix to emphasize the blurring effect
+        private Mat Blur(Mat image, char type)
         {
-            double[,] kernel = new double[,] { { 0.272, 0.534, 0.131 }, { 0.349, 0.686, 0.168 }, { 0.393, 0.769, 0.189 } };
+            Mat result = new Mat();
+
+            switch (type)
+            {
+                case 'b':
+                    Cv2.Blur(image, result, new OpenCvSharp.Size(11, 11), new OpenCvSharp.Point(-1, -1));
+                    break;
+                case 'g':
+                    Cv2.GaussianBlur(image, result, new OpenCvSharp.Size(11, 11), 0, 0);
+                    break;
+                case 'm':
+                    Cv2.MedianBlur(image, result, 11);
+                    break;
+                case 'f':
+                    Cv2.BilateralFilter(image, result, 11, 11 * 2, 11 / 2);
+                    break;
+                default:
+                    Cv2.Blur(image, result, new OpenCvSharp.Size(11, 11), new OpenCvSharp.Point(-1, -1));
+                    break;
+            }
+            return result;
+        }
+
+        //Convolution masking functionality reference: https://docs.opencv.org/4.x/d7/d37/tutorial_mat_mask_operations.html
+        private Mat ConvolutionFilter(Mat image, char type)
+        {
+            Mat result = new Mat();
+            int[,] kernel;
+            switch (type)
+            {
+                case 'e':
+                    kernel = new int[,]{{ -2, -1, 0 },
+                                        { -1, 1, 1 },
+                                        { 0, 1, 2 }};
+                    break;
+                case 's':
+                    kernel = new int[,]{{ 0, -1, 0 },
+                                        { -1, 5, -1 },
+                                        { 0, -1, 0 }};
+                    break;
+                case 'o':
+                    kernel = new int[,]{{ -1, -1, -1 },
+                                        { -1, 8, -1 },
+                                        { -1, -1, -1 }};
+                    break;
+                default:
+                    kernel = new int[,]{{ 0, 0, 0 },
+                                        { 0, 1, 0 },
+                                        { 0, 0, 0 }};
+                    break;
+            }
+            Cv2.Filter2D(image, result, image.Depth(), InputArray.Create(kernel));
+            return result;
+        }
+
+        //Sobel functionality reference: https://docs.opencv.org/4.x/d2/d2c/tutorial_sobel_derivatives.html
+        private Mat EdgeDetection(Mat image, char type)
+        {
+            Mat result = new Mat();
+            Mat src = new Mat();
+            Mat srcGray = new Mat();
+            Cv2.GaussianBlur(image, src, new OpenCvSharp.Size(3, 3), 0, 0, BorderTypes.Default);
+            Cv2.CvtColor(src, srcGray, ColorConversionCodes.BGR2GRAY);
+
+            Mat grad_x = new Mat();
+            Mat grad_y = new Mat();
+            Mat abs_grad_x = new Mat();
+            Mat abs_grad_y = new Mat();
+
+            if (type == 's')
+            {
+                Cv2.Scharr(srcGray, grad_x, MatType.CV_16S, 1, 0);
+                Cv2.Scharr(srcGray, grad_y, MatType.CV_16S, 0, 1);
+                Cv2.ConvertScaleAbs(grad_x, abs_grad_x);
+                Cv2.ConvertScaleAbs(grad_y, abs_grad_y);
+
+                Cv2.AddWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, result);
+            }
+            else
+            {
+                Cv2.Sobel(srcGray, grad_x, MatType.CV_16S, 1, 0, 3); //<---- used Kernel {{-1, 0, 1},{-2, 0, 2},{-1, 0, 1}} detects vertical edges
+                Cv2.Sobel(srcGray, grad_y, MatType.CV_16S, 0, 1, 3); //<---- used Kernel {{-1, -2, -1},{ 0, 0, 0},{1, 2, 1}} detects horizontal edges
+                Cv2.ConvertScaleAbs(grad_x, abs_grad_x);
+                Cv2.ConvertScaleAbs(grad_y, abs_grad_y);
+
+                switch (type)
+                {
+                    case 'd':
+                        Cv2.AddWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, result);
+                        break;
+                    case 'y':
+                        result = abs_grad_x;
+                        break;
+                    case 'x':
+                        result = abs_grad_y;
+                        break;
+                    default:
+                        Cv2.AddWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, result);
+                        break;
+                }
+            }
+
+            return result;
+        }
+
+
+        private Mat CalculateSepia(Mat src)
+        {
+            double[,] kernel = new double[,] { { 0.272, 0.534, 0.131 },
+                                               { 0.349, 0.686, 0.168 },
+                                               { 0.393, 0.769, 0.189 }};
             Mat colorSrc = src;
 
             if (src.Channels() == 1)
@@ -224,6 +372,39 @@ namespace RevaldeImageProcessing
                         break;
                     case "Sepia":
                         modification = 5;
+                        break;
+                    case "Sobel": //Convolution filters
+                        modification = 6;
+                        break;
+                    case "Emboss":
+                        modification = 7;
+                        break;
+                    case "Sharpen":
+                        modification = 8;
+                        break;
+                    case "Horizontal Sobel":
+                        modification = 9;
+                        break;
+                    case "Vertical Sobel":
+                        modification = 10;
+                        break;
+                    case "Scharr":
+                        modification = 11;
+                        break;
+                    case "Blur":
+                        modification = 12;
+                        break;
+                    case "Gaussian Blur":
+                        modification = 13;
+                        break;
+                    case "Median Blur":
+                        modification = 14;
+                        break;
+                    case "Bilateral Filter":
+                        modification = 15;
+                        break;
+                    case "Outline":
+                        modification = 16;
                         break;
                     default:
                         modification = 1;
@@ -373,8 +554,18 @@ namespace RevaldeImageProcessing
 
         private void SubtractBtn_Click(object sender, EventArgs e)
         {
-            if (imageB != null && imageA != null)
+            if(imageB == null)
             {
+                ShowError("No loaded subject");
+                return;
+            }
+            else if(imageA == null)
+            {
+                ShowError("No loaded background");
+                return;
+            } else
+            {
+                closeError();
                 PhotoSubtraction();
             }
         }
@@ -522,6 +713,39 @@ namespace RevaldeImageProcessing
                 }
                 Cv2.Add(subject, bgPart, final);
                 pictureBox2.Image = BitmapConverter.ToBitmap(final);
+            }
+        }
+
+        private void popoutImageBtn_Click(object sender, EventArgs e)
+        {
+            // Prefer final image if valid; otherwise fall back to original
+            Mat? mat = null;
+            if (finalImg != null && !finalImg.Empty())
+                mat = finalImg;
+            else if (modifiedImg != null && !modifiedImg.Empty())
+                mat = modifiedImg;
+
+            if (mat == null)
+            {
+                ShowError("No image to display.");
+                return;
+            }
+
+            const string winName = "Output image";
+            try
+            {
+                Cv2.NamedWindow(winName, WindowFlags.AutoSize);
+                Cv2.ImShow(winName, mat);
+                Cv2.WaitKey();
+            }
+            catch (OpenCVException ex)
+            {
+                Debug.WriteLine("OpenCV HighGUI error: " + ex.Message);
+                ShowError("Failed to show image: " + ex.Message);
+            }
+            finally
+            {
+                try { Cv2.DestroyWindow(winName); } catch {}
             }
         }
     }

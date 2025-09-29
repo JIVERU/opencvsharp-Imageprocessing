@@ -53,6 +53,7 @@
             loadbackgroundBtn = new Button();
             label2 = new Label();
             warningLabel = new Label();
+            popoutImageBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             menuStrip1.SuspendLayout();
@@ -144,7 +145,7 @@
             // 
             comboBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             comboBox1.FormattingEnabled = true;
-            comboBox1.Items.AddRange(new object[] { "Copy", "Greyscale", "Color Inversion", "Histogram", "Sepia" });
+            comboBox1.Items.AddRange(new object[] { "Copy", "Greyscale", "Color Inversion", "Histogram", "Sepia", "Sobel", "Emboss", "Sharpen", "Outline", "Vertical Sobel", "Horizontal Sobel", "Scharr", "Blur", "Gaussian Blur", "Median Blur", "Bilateral Filter" });
             comboBox1.Location = new Point(644, 3);
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(201, 23);
@@ -343,7 +344,7 @@
             warningLabel.AutoSize = true;
             warningLabel.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
             warningLabel.ForeColor = Color.Brown;
-            warningLabel.Location = new Point(365, 518);
+            warningLabel.Location = new Point(129, 505);
             warningLabel.Name = "warningLabel";
             warningLabel.Size = new Size(53, 27);
             warningLabel.TabIndex = 10;
@@ -351,11 +352,23 @@
             warningLabel.TextAlign = ContentAlignment.MiddleCenter;
             warningLabel.UseCompatibleTextRendering = true;
             // 
+            // popoutImageBtn
+            // 
+            popoutImageBtn.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            popoutImageBtn.Location = new Point(773, 505);
+            popoutImageBtn.Name = "popoutImageBtn";
+            popoutImageBtn.Size = new Size(204, 22);
+            popoutImageBtn.TabIndex = 11;
+            popoutImageBtn.Text = "Popout Image";
+            popoutImageBtn.UseVisualStyleBackColor = true;
+            popoutImageBtn.Click += popoutImageBtn_Click;
+            // 
             // ImageManipulation
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1134, 661);
+            Controls.Add(popoutImageBtn);
             Controls.Add(warningLabel);
             Controls.Add(menuStrip1);
             Controls.Add(tableLayoutPanel1);
@@ -405,5 +418,6 @@
         private Label label5;
         private Label label6;
         private Label warningLabel;
+        private Button popoutImageBtn;
     }
 }
